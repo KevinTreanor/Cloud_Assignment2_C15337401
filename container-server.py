@@ -40,31 +40,7 @@ def containers_index():
         resp = json.dumps(docker_ps_to_array(output))
   
     return Response(response=resp, mimetype="application/json")
-@app.route('/images', methods=['GET'])
-def images_index():
-    """
-    List all images 
-    
-    Complete the code below generating a valid response. 
-	
-	"""
-@app.route('/containers', methods=['GET'])
-def containers_index():
-    """
-    List all containers
- 
-    curl -s -X GET -H 'Accept: application/json' http://localhost:8080/containers | python -mjson.tool
-    curl -s -X GET -H 'Accept: application/json' http://localhost:8080/containers?state=running | python -mjson.tool
-    """
-    if request.args.get('state') == 'running': 
-        output = docker('ps')
-        resp = json.dumps(docker_ps_to_array(output))
-         
-    else:
-        output = docker('ps', '-a')
-        resp = json.dumps(docker_ps_to_array(output))
-  
-    return Response(response=resp, mimetype="application/json")
+
 	
 @app.route('/images', methods=['GET'])
 def images_index():
@@ -112,8 +88,7 @@ def containers_remove(id):
     """
     Delete a specific container - must be already stopped/killed
     """
-	
-	container.stop(id)
+    container.stop(id)
     docker ('rm',id)
     resp = '{"id": "%s"}' % id
     return Response(response=resp, mimetype="application/json")
@@ -123,6 +98,9 @@ def containers_remove_all():
     """
     Force remove all containers - dangrous!
     """
+   client = docker.from_env()
+   for container in client.containers.list():
+   container.stop()
    docker ('rm -a')
    # resp = ''
     return Response(response=resp, mimetype="application/json")
@@ -132,6 +110,7 @@ def images_remove_all():
     """
     Force remove all images - dangrous!
     """
+
    docker ('rmi -a')
  
    # resp = ''
@@ -149,30 +128,8 @@ def containers_create():
     args = ('run', '-d')
     id = docker(*(args + (image,)))[0:12]
     return Response(response='{"id": "%s"}' % id, mimetype="application/json")
-@app.route('/images', methods=['POST'])
-def images_create():
-    """
-	
-	   Force remove all images - dangrous!
-    """
-   docker ('rmi -a')
- 
-   # resp = ''
-    return Response(response=resp, mimetype="application/json")
-@app.route('/containers', methods=['POST'])
-def containers_create():
-    """
-    Create container (from existing image using id or name)
-    curl -X POST -H 'Content-Type: application/json' http://localhost:8080/containers -d '{"image": "my-app"}'
-    curl -X POST -H 'Content-Type: application/json' http://localhost:8080/containers -d '{"image": "b14752a6590e"}'
-    curl -X POST -H 'Content-Type: application/json' http://localhost:8080/containers -d '{"image": "b14752a6590e","publish":"8081:22"}'
-    """
-    body = request.get_json(force=True)
-    image = body['image']
-    args = ('run', '-d')
-    id = docker(*(args + (image,)))[0:12]
-    return Response(response='{"id": "%s"}' % id, mimetype="application/json")
-@app.route('/images', methods=['POST'])
+
+
 def images_create():
     """
     Create image (from uploaded Dockerfile)
